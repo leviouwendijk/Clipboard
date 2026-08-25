@@ -25,40 +25,28 @@ public enum Clipboard {
             #endif
         }
 
+        @discardableResult
         public func write(
             _ text: String
-        ) {
+        ) -> Bool {
             #if os(macOS)
                 let pasteboard =
                     NSPasteboard.general
 
                 pasteboard.clearContents()
-                pasteboard.declareTypes(
+
+                return pasteboard.writeObjects(
                     [
-                        .string,
-                        .utf8PlainText,
-                    ],
-                    owner: nil
+                        text as NSString,
+                    ]
                 )
-
-                _ = pasteboard.setString(
-                    text,
-                    forType: .string
-                )
-
-                if let data = text.data(
-                    using: .utf8
-                ) {
-                    _ = pasteboard.setData(
-                        data,
-                        forType: .utf8PlainText
-                    )
-                }
             #elseif canImport(UIKit)
                 UIPasteboard.general.string =
                     text
+
+                return true
             #else
-                // Unsupported platform: no-op
+                return false
             #endif
         }
     }
