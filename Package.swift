@@ -5,15 +5,41 @@ import PackageDescription
 
 let package = Package(
     name: "Clipboard",
+    platforms: [
+        .macOS(.v13)
+    ],
     products: [
         .library(
             name: "Clipboard",
             targets: ["Clipboard"]
         ),
+        .executable(
+            name: "clipboard",
+            targets: [
+                "ClipboardCLI",
+            ]
+        ),
     ],
+    dependencies: [
+        .package(
+            url: "https://github.com/leviouwendijk/Arguments.git",
+            branch: "master"
+        ),
+    ],
+
     targets: [
         .target(
             name: "Clipboard"
+        ),
+        .executableTarget(
+            name: "ClipboardCLI",
+            dependencies: [
+                "Clipboard",
+                .product(
+                    name: "Arguments",
+                    package: "Arguments"
+                ),
+            ]
         ),
     ]
 )

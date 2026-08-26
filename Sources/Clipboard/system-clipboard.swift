@@ -8,18 +8,40 @@ import Foundation
 
 public enum Clipboard {
     public static let system =
-        SystemClipboard()
+        Channel(
+            storage: .system
+        )
 
-    public struct SystemClipboard:
+    public static func register(
+        _ name: String
+    ) -> Channel {
+        Channel(
+            storage: .named(
+                name
+            )
+        )
+    }
+
+    public struct Channel:
         Sendable
     {
+        fileprivate let storage:
+            Storage
+
+        fileprivate init(
+            storage: Storage
+        ) {
+            self.storage =
+                storage
+        }
+
         public func read() -> String? {
             #if os(macOS)
-                NSPasteboard.general.string(
+                pasteboard.string(
                     forType: .string
                 )
             #elseif canImport(UIKit)
-                UIPasteboard.general.string
+                pasteboard?.string
             #else
                 nil
             #endif
@@ -31,7 +53,7 @@ public enum Clipboard {
         ) -> Bool {
             #if os(macOS)
                 let pasteboard =
-                    NSPasteboard.general
+                    pasteboard
 
                 pasteboard.clearContents()
 
@@ -41,7 +63,11 @@ public enum Clipboard {
                     ]
                 )
             #elseif canImport(UIKit)
-                UIPasteboard.general.string =
+                guard let pasteboard else {
+                    return false
+                }
+
+                pasteboard.string =
                     text
 
                 return true
@@ -49,5 +75,52 @@ public enum Clipboard {
                 return false
             #endif
         }
+
+        #if os(macOS)
+            private var pasteboard:
+                NSPasteboard
+            {
+                switch storage {
+                case .system:
+                    NSPasteboard.general
+
+                case .named(let name):
+                    NSPasteboard(
+                        name:
+                            NSPasteboard.Name(
+                                name
+                            )
+                    )
+                }
+            }
+        #elseif canImport(UIKit)
+            private var pasteboard:
+                UIPasteboard?
+            {
+                switch storage {
+                case .system:
+                    UIPasteboard.general
+
+                case .named(let name):
+                    UIPasteboard(
+                        name:
+                            UIPasteboard.Name(
+                                name
+                            ),
+                        create: true
+                    )
+                }
+            }
+        #endif
+    }
+
+    public typealias SystemClipboard =
+        Channel
+
+    fileprivate enum Storage:
+        Sendable
+    {
+        case system
+        case named(String)
     }
 }
